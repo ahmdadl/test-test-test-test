@@ -288,14 +288,16 @@ router.post("/interactive-quizs", async (req, res) => {
   if(newObj) res.json(newObj)
 });
 
-// router.post("/postID_Quize", async (req, res) => {
-//   const questionList = req.body
-//   dataArray.push(questionList)
-//   res.send("Data send successfully")
-// });
-// router.get("/postID_Quize", async (req, res) => {
-//   res.json(dataArray)
-// });
+router.post("/postID_Quize/:id", async (req, res) => {
+  const questionsArray = req.body.questionsArray
+  let obj = await interactiveQuizSchema.findById(req.params.id)
+  obj.questionList.push(...questionsArray)
+  await obj.save()
+  res.send("Data send successfully")
+});
+router.get("/postID_Quize", async (req, res) => {
+  res.json(dataArray)
+});
 
 
 
