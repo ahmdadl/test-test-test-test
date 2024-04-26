@@ -4,6 +4,8 @@ let router = express.Router();
 let mongoose = require("mongoose");
 let interactiveObjectSchema =
   require("../models/interactive-object.model").interactiveObjectSchema;
+let interactiveQuizSchema =
+  require("../models/interactive-quiz.model").interactiveQuizSchema;
 let InteractiveObjectTypeSchema = require("../models/object-types.model").InteractiveObjectTypeSchema;
 const fs = require("fs")
 const path = require("path")
@@ -272,10 +274,11 @@ router.get("/isAnswered", async (req, res) => {
   let obj = await interactiveObjectSchema.find({isAnswered:"g"});
   res.status(200).json(obj);
 });
-router.post("/interactive-objects", async (req, res) => {
+router.post("/interactive-objects/:id", async (req, res) => {
+  //post the id of quiz as params
   const newObj = new interactiveObjectSchema({ _id: false });
   newObj.objId = new mongoose.Types.ObjectId();
-
+  
   for (let key in req.body) {
     if (Object.hasOwnProperty.bind(req.body)(key)) {
       if (key === "parameters" && typeof req.body[key] === "string")
@@ -283,10 +286,15 @@ router.post("/interactive-objects", async (req, res) => {
       else newObj[key] = req.body[key];
     }
   }
-
+  
+  let obj = await interactiveQuizSchema.findById(req.params.id)
+  obj.questionList.push(newObj._id)
+  await obj.save()
+  console.log("this question post in quiz")
   newObj.save((err, doc) => {
     if (!err) {
       res.status(200).json(newObj);
+      console.log("this question post in question-bank")
     } else {
       console.log(err);
       res.status(406).json(`Not Acceptable: ${err}`);
