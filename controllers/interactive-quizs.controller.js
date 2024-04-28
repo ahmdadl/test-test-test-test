@@ -8,7 +8,8 @@ let interactiveQuizSchema =
 let InteractiveObjectTypeSchema = require("../models/object-types.model").InteractiveObjectTypeSchema;
 const fs = require("fs")
 const path = require("path")
-const request = require("request")
+const request = require("request");
+const isNotValidObjectId = require("../utils/helpers");
 const dataArray = [];
 
 /**
@@ -266,7 +267,7 @@ router.get("/interactive-quizs", async (req, res) => {
     limit,
     sort: { updatedAt: "desc" },
   });
-  res.json(data);
+  return res.json(data);
 });
 
 router.post("/interactive-quizs", async (req, res) => {
@@ -320,10 +321,14 @@ router.post('submit', (req, res) => {
   res.send('Quiz submitted successfully!');
 });
 router.get("/interactive-quizs/:id", async (req, res) => {
+  if (isNotValidObjectId(req.params.id)) return res.status(404).json("Invalid ID");
+  
   let obj = await interactiveQuizSchema.findById(req.params.id).populate('questionList');
   res.status(200).json(obj);
 });
 router.get("/questionInQuize/:id", async (req, res) => {
+  if (isNotValidObjectId(req.params.id)) return res.status(404).json("Invalid ID");
+  
   let obj = await interactiveQuizSchema.findById(req.params.id).populate('questionList');
   res.status(200).json(obj.questionList);
 });

@@ -2,6 +2,7 @@ require("./db")
 const express = require("express")
 const interactiveObjectsController = require("./controllers/interactive-objects.controller")
 const interactivequizsController = require("./controllers/interactive-quizs.controller")
+const TopicsController = require("./controllers/topics.controller")
 const MCQController = require("./controllers/MCQ.controller")
 const questionTypesController = require("./controllers/objectTypes.controller")
 const uploadFileController = require("./controllers/upload-file")
@@ -26,6 +27,7 @@ const swaggerOptions = {
   apis: [
     "controllers/interactive-quizs.controller.js",
     "controllers/interactive-objects.controller.js",
+    "controllers/topics.controller.js",
   ],
 }
 
@@ -56,5 +58,6 @@ app.use("/api", [
   interactivequizsController,
   MCQController,
   questionTypesController,
-  uploadFileController
+  uploadFileController,
+  TopicsController,
 ])
