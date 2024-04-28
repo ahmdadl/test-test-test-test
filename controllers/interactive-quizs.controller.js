@@ -10,6 +10,7 @@ const fs = require("fs")
 const path = require("path")
 const request = require("request");
 const isNotValidObjectId = require("../utils/helpers");
+const { interactiveObjectSchema } = require("../models/interactive-object.model");
 const dataArray = [];
 
 /**
