@@ -13,6 +13,8 @@ var TopicSchema = new mongoose.Schema(
         subDomainName: {
             type: String,
         },
+        createdAt: { type: Date, default: Date.now },
+        updatedAt: { type: Date, default: Date.now },
     },
 
     {

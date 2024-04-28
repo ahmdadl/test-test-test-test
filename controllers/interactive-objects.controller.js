@@ -288,7 +288,6 @@ router.post("/interactive-objects", async (req, res) => {
       else newObj[key] = req.body[key];
     }
   }
-  
  
   newObj.save(async( err, doc) => {
     if (!err) {

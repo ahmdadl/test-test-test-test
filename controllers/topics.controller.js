@@ -11,21 +11,29 @@ const TopicSchema = require('../models/tobic.model').TopicSchema;
 const dataArray = [];
 
 router.get('/topics', async (req, res) => {
-    const page = req.query.page || 1;
-    const limit = req.query.limit || 14;
+    const query = req.query;
 
-    delete req.query.page;
-    delete req.query.limit;
+    const page = query.page || 1;
+    const limit = query.limit || 14;
+    const paginate = query.paginate || '';
 
-    if (req.query['subDomainName']) {
-        const searchValue = req.query['subDomainName'];
-        req.query['subDomainName'] = {
+    delete query.page;
+    delete query.limit;
+    delete query.paginate;
+
+    if (query['subDomainName']) {
+        const searchValue = query['subDomainName'];
+        query['subDomainName'] = {
             $regex: new RegExp(searchValue),
             $options: 'i',
         };
     }
 
-    const data = await TopicSchema.paginate(req.query, {
+    if (paginate === 'false') {
+        return res.json(await TopicSchema.find(query))
+    }
+
+    const data = await TopicSchema.paginate(query, {
         page,
         limit,
         sort: { updatedAt: 'desc' },
