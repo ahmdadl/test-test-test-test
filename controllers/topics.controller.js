@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const request = require('request');
 const isNotValidObjectId = require('../utils/helpers');
+const { InteractiveObjectTypeSchema } = require('../models/object-types.model');
 const TopicSchema = require('../models/tobic.model').TopicSchema;
 const dataArray = [];
 
