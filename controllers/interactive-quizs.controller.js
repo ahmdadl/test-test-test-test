@@ -380,6 +380,48 @@ router.get('/questionInQuize/:id', async (req, res) => {
 
     res.status(200).json(questionList);
 });
+router.delete(
+    '/removeQuestionFromQuiz/:quizId/:questionId',
+    async (req, res) => {
+        if (isNotValidObjectId(req.params.quizId))
+            return res.status(404).json('Invalid ID');
+
+        let quiz = await interactiveQuizSchema
+            .findById(req.params.quizId)
+            .populate('questionList');
+
+        let questionList = quiz.questionList;
+
+        questionList = questionList.filter(
+            (q) => q._id != req.params.questionId
+        );
+
+        quiz.questionList = questionList;
+
+        const obj = { _id: req.params.quizId, ...quiz };
+        obj.updatedAt = Date.now();
+
+        interactiveQuizSchema.updateOne(
+            { _id: req.params.quizId },
+            {
+                $set: obj,
+            },
+            {
+                new: false,
+                runValidators: true,
+                returnNewDocument: true,
+                upsert: true,
+            },
+            (err, doc) => {
+                if (!err) {
+                    res.status(200).json({ success: true });
+                } else {
+                    res.status(500).json(err);
+                }
+            }
+        );
+    }
+);
 router.patch('/interactive-quizs/:id', (req, res) => {
     const id = req.params.id;
     const obj = { _id: id };
