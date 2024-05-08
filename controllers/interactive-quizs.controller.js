@@ -1,16 +1,19 @@
-require("dotenv").config();
-const express = require("express");
-const bodyParser = require("body-parser");
+require('dotenv').config();
+const express = require('express');
+const bodyParser = require('body-parser');
 let router = express.Router();
-let mongoose = require("mongoose");
+let mongoose = require('mongoose');
 let interactiveQuizSchema =
-  require("../models/interactive-quiz.model").interactiveQuizSchema;
-let InteractiveObjectTypeSchema = require("../models/object-types.model").InteractiveObjectTypeSchema;
-const fs = require("fs")
-const path = require("path")
-const request = require("request");
-const isNotValidObjectId = require("../utils/helpers");
-const { interactiveObjectSchema } = require("../models/interactive-object.model");
+    require('../models/interactive-quiz.model').interactiveQuizSchema;
+let InteractiveObjectTypeSchema =
+    require('../models/object-types.model').InteractiveObjectTypeSchema;
+const fs = require('fs');
+const path = require('path');
+const request = require('request');
+const isNotValidObjectId = require('../utils/helpers');
+const {
+    interactiveObjectSchema,
+} = require('../models/interactive-object.model');
 const dataArray = [];
 
 /**
@@ -252,123 +255,172 @@ const dataArray = [];
  *            - X
  */
 
-router.get("/interactive-quizs", async (req, res) => {
-  const page = req.query.page || 1;
-  const limit = req.query.limit || 14;
+router.get('/interactive-quizs', async (req, res) => {
+    const page = req.query.page || 1;
+    const limit = req.query.limit || 14;
 
-  delete req.query.page;
-  delete req.query.limit;
-  for await (let item of ["object", "domainName", "subDomainName"])
-    if (req.query[item]) {
-      const searchValue = req.query[item];
-      req.query[item] = { $regex: new RegExp(searchValue), $options: "i" };
-    }
-  const data = await interactiveQuizSchema.paginate(req.query, {
-    page,
-    limit,
-    sort: { updatedAt: "desc" },
-  });
-  return res.json(data);
+    delete req.query.page;
+    delete req.query.limit;
+    for await (let item of ['object', 'domainName', 'subDomainName'])
+        if (req.query[item]) {
+            const searchValue = req.query[item];
+            req.query[item] = {
+                $regex: new RegExp(searchValue),
+                $options: 'i',
+            };
+        }
+    const data = await interactiveQuizSchema.paginate(req.query, {
+        page,
+        limit,
+        sort: { updatedAt: 'desc' },
+    });
+    return res.json(data);
 });
 
-router.post("/interactive-quizs", async (req, res) => {
-  const {quizName,language,domainId,subDomainId,domainName,subDomainName,quizSchedule,quizDuration,totalGrade,ThePassScore,complexity,questionList} = req.body
-  console.log(questionList,"questionList")
-  const newObj =  await new interactiveQuizSchema({ 
-    quizName,
-    language,
-    domainId,
-    subDomainId,
-    domainName,
-    subDomainName,
-    quizSchedule,
-    quizDuration,
-    totalGrade,
-    ThePassScore,
-    complexity,
-    questionList }).save();
-  if(newObj) res.json(newObj)
+router.post('/interactive-quizs', async (req, res) => {
+    const {
+        quizName,
+        language,
+        domainId,
+        subDomainId,
+        domainName,
+        subDomainName,
+        quizSchedule,
+        quizDuration,
+        totalGrade,
+        ThePassScore,
+        complexity,
+        questionList,
+    } = req.body;
+    console.log(questionList, 'questionList');
+    const newObj = await new interactiveQuizSchema({
+        quizName,
+        language,
+        domainId,
+        subDomainId,
+        domainName,
+        subDomainName,
+        quizSchedule,
+        quizDuration,
+        totalGrade,
+        ThePassScore,
+        complexity,
+        questionList,
+    }).save();
+    if (newObj) res.json(newObj);
 });
 
-router.post("/postID_Quize/:id", async (req, res) => {
-  const questionsArray = req.body.questionsArray
-  let obj = await interactiveQuizSchema.findById(req.params.id)
-  obj.questionList.push(...questionsArray)
-  await obj.save()
-  res.send("Data send successfully")
+router.post('/postID_Quize/:id', async (req, res) => {
+    const questionsArray = req.body.questionsArray;
+    let obj = await interactiveQuizSchema.findById(req.params.id);
+    obj.questionList.push(...questionsArray);
+    await obj.save();
+    res.send('Data send successfully');
 });
-router.get("/postID_Quize", async (req, res) => {
-  res.json(dataArray)
+router.get('/postID_Quize', async (req, res) => {
+    res.json(dataArray);
 });
-
-
-
 
 router.get('questions', (req, res) => {
-  const questions = [
-    'Question 1?',
-    'Question 2?',
-    'Question 3?',
-    // Add more questions
-  ];
-  res.json(questions);
+    const questions = [
+        'Question 1?',
+        'Question 2?',
+        'Question 3?',
+        // Add more questions
+    ];
+    res.json(questions);
 });
 
 router.post('submit', (req, res) => {
-  const answers = req.body.answers;
-  // Score the answers and send back the result
-  // For simplicity, let's just log the answers here
-  console.log('Submitted answers:', answers);
-  res.send('Quiz submitted successfully!');
+    const answers = req.body.answers;
+    // Score the answers and send back the result
+    // For simplicity, let's just log the answers here
+    console.log('Submitted answers:', answers);
+    res.send('Quiz submitted successfully!');
 });
-router.get("/interactive-quizs/:id", async (req, res) => {
-  if (isNotValidObjectId(req.params.id)) return res.status(404).json("Invalid ID");
-  
-  let obj = await interactiveQuizSchema.findById(req.params.id).populate('questionList');
-  res.status(200).json(obj);
-});
-router.get("/questionInQuize/:id", async (req, res) => {
-  if (isNotValidObjectId(req.params.id)) return res.status(404).json("Invalid ID");
-  
-  let obj = await interactiveQuizSchema.findById(req.params.id).populate('questionList');
-  res.status(200).json(obj.questionList);
-});
-router.patch("/interactive-quizs/:id", (req, res) => {
-  const id = req.params.id;
-  const obj = { _id: id };
-  for (let key in req.body) {
-    if (req.body.hasOwnProperty(key)) {
-      if (key === "questionList" && typeof req.body[key] === "string")
-        obj[key] = JSON.parse(req.body[key]);
-      else obj[key] = req.body[key];
-    }
-  }
+router.get('/interactive-quizs/:id', async (req, res) => {
+    if (isNotValidObjectId(req.params.id))
+        return res.status(404).json('Invalid ID');
 
-  obj.updatedAt = Date.now();
-  interactiveQuizSchema.updateOne(
-    { _id: id },
-    {
-      $set: obj,
-    },
-    { new: false, runValidators: true, returnNewDocument: true, upsert: true },
-    (err, doc) => {
-      if (!err) {
-        res.status(200).json(obj);
-      } else {
-        res.status(500).json(err);
-      }
-    }
-  );
+    let obj = await interactiveQuizSchema
+        .findById(req.params.id)
+        .populate('questionList');
+    res.status(200).json(obj);
 });
-router.delete("/interactive-quizs/:id", async (req, res) => {
-  interactiveQuizSchema
-    .findByIdAndRemove(req.params.id)
-    .then((doc) => {
-      res.status(200).json("Object deleted successfully.");
-    })
-    .catch((err) => {
-      res.status(500).json(`Can't delete object: ${err}`);
-    });
+router.get('/questionInQuize/:id', async (req, res) => {
+    if (isNotValidObjectId(req.params.id))
+        return res.status(404).json('Invalid ID');
+
+    let obj = await interactiveQuizSchema
+        .findById(req.params.id)
+        .populate('questionList');
+
+    let questionList = obj.questionList;
+
+    if (req.query.domain && req.query.domain.length > 4) {
+        questionList = questionList.filter(
+            (q) => q.domainId == req.query.domain
+        );
+    }
+    if (req.query.subDomain && req.query.subDomain !== '') {
+        questionList = questionList.filter(
+            (q) => q.subDomainId == req.query.subDomain
+        );
+    }
+    if (req.query.language && req.query.language !== '') {
+        questionList = questionList.filter(
+            (q) => q.language == req.query.language
+        );
+    }
+    if (req.query.answerStatus && req.query.answerStatus !== '') {
+        questionList = questionList.filter(
+            (q) => q.isAnswered == req.query.answerStatus
+        );
+    }
+
+    res.status(200).json(questionList);
+});
+router.patch('/interactive-quizs/:id', (req, res) => {
+    const id = req.params.id;
+    const obj = { _id: id };
+    for (let key in req.body) {
+        if (req.body.hasOwnProperty(key)) {
+            if (key === 'questionList' && typeof req.body[key] === 'string')
+                obj[key] = JSON.parse(req.body[key]);
+            else obj[key] = req.body[key];
+        }
+    }
+
+    obj.updatedAt = Date.now();
+    interactiveQuizSchema.updateOne(
+        { _id: id },
+        {
+            $set: obj,
+        },
+        {
+            new: false,
+            runValidators: true,
+            returnNewDocument: true,
+            upsert: true,
+        },
+        (err, doc) => {
+            if (!err) {
+                res.status(200).json(obj);
+            } else {
+                res.status(500).json(err);
+            }
+        }
+    );
+});
+router.delete('/interactive-quizs/:id', async (req, res) => {
+    interactiveQuizSchema
+        .findByIdAndRemove(req.params.id)
+        .then((doc) => {
+            res.status(200).json('Object deleted successfully.');
+        })
+        .catch((err) => {
+            res.status(500).json(`Can't delete object: ${err}`);
+        });
 });
 
 module.exports = router;
