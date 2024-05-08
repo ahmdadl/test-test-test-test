@@ -374,7 +374,7 @@ router.get('/questionInQuize/:id', async (req, res) => {
     }
     if (req.query.answerStatus && req.query.answerStatus !== '') {
         questionList = questionList.filter(
-            (q) => q.isAnswered == req.query.answerStatus
+            (q) => q.hasAnswered == req.query.answerStatus
         );
     }
 
