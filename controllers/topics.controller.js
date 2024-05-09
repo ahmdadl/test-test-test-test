@@ -9,6 +9,9 @@ const request = require('request');
 const isNotValidObjectId = require('../utils/helpers');
 const { InteractiveObjectTypeSchema } = require('../models/object-types.model');
 const { interactiveQuizSchema } = require('../models/interactive-quiz.model');
+const {
+    interactiveObjectSchema,
+} = require('../models/interactive-object.model');
 const TopicSchema = require('../models/tobic.model').TopicSchema;
 const dataArray = [];
 
@@ -117,8 +120,8 @@ router.post('/topics-criteria/:quizId', async (req, res) => {
     if (isNotValidObjectId(req.params.quizId))
         return res.status(404).json('Invalid ID');
 
-    const questions = await InteractiveObjectTypeSchema.find({
-        // topicId: req.body.topicId,
+    const questions = await interactiveObjectSchema.find({
+        topicId: req.body.topicId,
     });
 
     const body = {
@@ -154,13 +157,13 @@ router.post('/topics-criteria/:quizId', async (req, res) => {
     );
 
     const mcqQuestions = questions
-        .filter((q) => q.typeName === 'MCQ')
+        .filter((q) => q.type === 'MCQ')
         .slice(0, mcqCount);
     const fillQuestions = questions
-        .filter((q) => q.typeName === 'FillTheBlank')
+        .filter((q) => q.type === 'FillTheBlank')
         .slice(0, fillCount);
     const trueQuestions = questions
-        .filter((q) => q.typeName === 'true-false')
+        .filter((q) => q.type === 'true-false')
         .slice(0, trueCount);
 
     let selectedQuestions = [
@@ -193,17 +196,40 @@ router.post('/topics-criteria/:quizId', async (req, res) => {
         .filter((q) => q.complexity == 'hard')
         .slice(0, hardCount);
 
-    // selectedQuestions = [
-    //     ...easyQuestions,
-    //     ...mediumQuestions,
-    //     ...hardQuestions,
-    // ];
-    // console.log(selectedQuestions);
+    selectedQuestions = [
+        ...easyQuestions,
+        ...mediumQuestions,
+        ...hardQuestions,
+    ];
 
     /**
      * Last update quiz with new list
      */
-    res.send({ ids: questions.map((x) => x._id) });
+    const id = req.params.quizId;
+    const obj = { _id: id };
+
+    obj['questionList'] = selectedQuestions.map((x) => x._id);
+
+    obj.updatedAt = Date.now();
+    interactiveQuizSchema.updateOne(
+        { _id: id },
+        {
+            $set: obj,
+        },
+        {
+            new: false,
+            runValidators: true,
+            returnNewDocument: true,
+            upsert: true,
+        },
+        (err, doc) => {
+            if (!err) {
+                res.status(200).json(obj);
+            } else {
+                res.status(500).json(err);
+            }
+        }
+    );
 });
 
 module.exports = router;
