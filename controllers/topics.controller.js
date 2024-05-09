@@ -8,6 +8,7 @@ const path = require('path');
 const request = require('request');
 const isNotValidObjectId = require('../utils/helpers');
 const { InteractiveObjectTypeSchema } = require('../models/object-types.model');
+const { interactiveQuizSchema } = require('../models/interactive-quiz.model');
 const TopicSchema = require('../models/tobic.model').TopicSchema;
 const dataArray = [];
 
@@ -31,7 +32,7 @@ router.get('/topics', async (req, res) => {
     }
 
     if (paginate === 'false') {
-        return res.json(await TopicSchema.find(query))
+        return res.json(await TopicSchema.find(query));
     }
 
     const data = await TopicSchema.paginate(query, {
@@ -110,6 +111,99 @@ router.delete('/topics/:id', async (req, res) => {
     } catch (error) {
         res.status(400).send('Error deleting topic:');
     }
+});
+
+router.post('/topics-criteria/:quizId', async (req, res) => {
+    if (isNotValidObjectId(req.params.quizId))
+        return res.status(404).json('Invalid ID');
+
+    const questions = await InteractiveObjectTypeSchema.find({
+        // topicId: req.body.topicId,
+    });
+
+    const body = {
+        topicId: req.body.topicId,
+        numberOfQuestions: Number(req.body.numberOfQuestions),
+        duration: Number(req.body.duration),
+
+        easyPercentage: Number(req.body.easyPercentage),
+        mediumPercentage: Number(req.body.mediumPercentage),
+        hardPercentage: Number(req.body.hardPercentage),
+
+        mcqPercentage: Number(req.body.mcqPercentage),
+        fillTheBlankPercentage: Number(req.body.fillTheBlankPercentage),
+        trueFalsePercentage: Number(req.body.trueFalsePercentage),
+    };
+
+    const totalQuestions =
+        body.numberOfQuestions > questions.length
+            ? questions.length
+            : body.numberOfQuestions;
+
+    /**
+     * First calculate for type
+     */
+    const mcqCount = Math.round(
+        (body.mcqPercentage / totalQuestions) * totalQuestions
+    );
+    const fillCount = Math.round(
+        (body.fillCount / totalQuestions) * totalQuestions
+    );
+    const trueCount = Math.round(
+        (body.trueFalsePercentage / totalQuestions) * totalQuestions
+    );
+
+    const mcqQuestions = questions
+        .filter((q) => q.typeName === 'MCQ')
+        .slice(0, mcqCount);
+    const fillQuestions = questions
+        .filter((q) => q.typeName === 'FillTheBlank')
+        .slice(0, fillCount);
+    const trueQuestions = questions
+        .filter((q) => q.typeName === 'true-false')
+        .slice(0, trueCount);
+
+    let selectedQuestions = [
+        ...mcqQuestions,
+        ...fillQuestions,
+        ...trueQuestions,
+    ];
+
+    /**
+     * second calculate for level
+     */
+    const easyCount = Math.round(
+        (body.easyPercentage / totalQuestions) * totalQuestions
+    );
+    const mediumCount = Math.round(
+        (body.mediumPercentage / totalQuestions) * totalQuestions
+    );
+    const hardCount = Math.round(
+        (body.hardPercentage / totalQuestions) * totalQuestions
+    );
+
+    // Filter questions based on level
+    const easyQuestions = selectedQuestions
+        .filter((q) => q.complexity == 'easy')
+        .slice(0, easyCount);
+    const mediumQuestions = selectedQuestions
+        .filter((q) => q.complexity == 'medium')
+        .slice(0, mediumCount);
+    const hardQuestions = selectedQuestions
+        .filter((q) => q.complexity == 'hard')
+        .slice(0, hardCount);
+
+    // selectedQuestions = [
+    //     ...easyQuestions,
+    //     ...mediumQuestions,
+    //     ...hardQuestions,
+    // ];
+    // console.log(selectedQuestions);
+
+    /**
+     * Last update quiz with new list
+     */
+    res.send({ ids: questions.map((x) => x._id) });
 });
 
 module.exports = router;
