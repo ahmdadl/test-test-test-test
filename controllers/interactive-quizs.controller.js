@@ -390,6 +390,8 @@ router.delete(
             .findById(req.params.quizId)
             .populate('questionList');
 
+        if (!quiz) return res.status(404).json('Invalid ID');
+
         let questionList = quiz.questionList;
 
         questionList = questionList.filter(
