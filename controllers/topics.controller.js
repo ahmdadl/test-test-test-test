@@ -38,12 +38,25 @@ router.get('/topics', async (req, res) => {
         return res.json(await TopicSchema.find(query));
     }
 
-    const data = await TopicSchema.paginate(query, {
+    const topics = await TopicSchema.paginate(query, {
         page,
         limit,
         sort: { updatedAt: 'desc' },
     });
-    return res.json(data);
+
+    const topicsWithQuestionCount = await Promise.all(
+        topics.docs.map(async (topic) => {
+            const questionCount = await interactiveObjectSchema.countDocuments({
+                topicId: topic._id,
+            });
+            return { ...topic.toObject(), questionCount };
+        })
+    );
+
+    return res.json({
+        ...topics,
+        docs: topicsWithQuestionCount,
+    });
 });
 
 router.post('/topics', async (req, res) => {

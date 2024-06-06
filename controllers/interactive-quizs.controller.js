@@ -355,6 +355,8 @@ router.get('/questionInQuize/:id', async (req, res) => {
         .findById(req.params.id)
         .populate('questionList');
 
+    if (!obj) return res.status(200).json([]);
+
     let questionList = obj.questionList;
 
     if (req.query.domain && req.query.domain.length > 4) {
