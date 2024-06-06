@@ -12,8 +12,9 @@ const { interactiveQuizSchema } = require('../models/interactive-quiz.model');
 const {
     interactiveObjectSchema,
 } = require('../models/interactive-object.model');
-const { ExamQuestionSchema } = require('../models/exam-questions.model');
 const ExamSchema = require('../models/exam.model').ExamSchema;
+const ExamQuestionSchema =
+    require('../models/exam-questions.model').ExamQuestionSchema;
 const dataArray = [];
 
 router.get('/exams', async (req, res) => {
@@ -36,6 +37,18 @@ router.get('/exams', async (req, res) => {
     return res.json({
         ...exams,
     });
+});
+
+router.get('/exams/:id/questions', async (req, res) => {
+    const query = req.query;
+
+    let obj = await ExamSchema.findById(req.params.id).populate('questionList');
+
+    if (!obj) return res.status(200).json([]);
+
+    let questionList = obj.questionList;
+
+    res.status(200).json(questionList);
 });
 
 router.post('/exams', async (req, res) => {
@@ -66,7 +79,7 @@ router.post('/exams', async (req, res) => {
             studentTitle,
             answer,
             isSuccess,
-        });
+        }).save();
         questions.push(examQuestion);
     }
 
