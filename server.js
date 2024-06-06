@@ -4,6 +4,7 @@ const interactiveObjectsController = require('./controllers/interactive-objects.
 const interactivequizsController = require('./controllers/interactive-quizs.controller');
 const TopicsController = require('./controllers/topics.controller');
 const StudentsController = require('./controllers/students.controller');
+const ExamsController = require('./controllers/exams.controller');
 const MCQController = require('./controllers/MCQ.controller');
 const questionTypesController = require('./controllers/objectTypes.controller');
 const uploadFileController = require('./controllers/upload-file');
@@ -60,4 +61,5 @@ app.use('/api', [
     uploadFileController,
     TopicsController,
     StudentsController,
+    ExamsController,
 ]);
