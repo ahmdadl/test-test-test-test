@@ -12,6 +12,7 @@ const { interactiveQuizSchema } = require('../models/interactive-quiz.model');
 const {
     interactiveObjectSchema,
 } = require('../models/interactive-object.model');
+const interactiveObjectModel = require('../models/interactive-object.model');
 const TopicSchema = require('../models/tobic.model').TopicSchema;
 const dataArray = [];
 
@@ -133,22 +134,57 @@ router.post('/topics-criteria/:quizId', async (req, res) => {
     if (isNotValidObjectId(req.params.quizId))
         return res.status(404).json('Invalid ID');
 
-    const questions = await interactiveObjectSchema.find({
-        topicId: req.body.topicId,
-    });
+    // check if topic object was passed to request
+    let topic = null;
+    let questions = [];
+
+    if (req.body.topicId === 'new' && req.body.topic) {
+        // THEN we create the topic first
+        const { title, domainId, domainName, subDomainId, subDomainName } =
+            req.body.topic;
+
+        topic = await new TopicSchema({
+            title,
+            domainId,
+            domainName,
+            subDomainId,
+            subDomainName,
+        });
+        // .save();
+
+        // Then we add the questions to current topic
+        const selectedQuestionsIds = req.body.selectedQuestions.split(',');
+        // Convert string IDs to ObjectId if necessary
+        const objectIds = selectedQuestionsIds.map((id) =>
+            mongoose.Types.ObjectId(id)
+        );
+        interactiveObjectSchema
+            .find({ _id: { $in: objectIds } })
+            .then((docs) => {
+                questions = docs;
+            });
+    }
+
+    const topicId = req.body.topicId === 'new' ? topic.id : req.body.topicId;
+
+    if (!questions) {
+        questions = await interactiveObjectSchema.find({
+            topicId: topicId,
+        });
+    }
 
     const body = {
         topicId: req.body.topicId,
         numberOfQuestions: Number(req.body.numberOfQuestions),
         duration: Number(req.body.duration),
 
-        easyPercentage: Number(req.body.easyPercentage),
-        mediumPercentage: Number(req.body.mediumPercentage),
-        hardPercentage: Number(req.body.hardPercentage),
+        // easyPercentage: Number(req.body.easyPercentage),
+        // mediumPercentage: Number(req.body.mediumPercentage),
+        // hardPercentage: Number(req.body.hardPercentage),
 
-        mcqPercentage: Number(req.body.mcqPercentage),
-        fillTheBlankPercentage: Number(req.body.fillTheBlankPercentage),
-        trueFalsePercentage: Number(req.body.trueFalsePercentage),
+        // mcqPercentage: Number(req.body.mcqPercentage),
+        // fillTheBlankPercentage: Number(req.body.fillTheBlankPercentage),
+        // trueFalsePercentage: Number(req.body.trueFalsePercentage),
     };
 
     const totalQuestions =
@@ -156,64 +192,29 @@ router.post('/topics-criteria/:quizId', async (req, res) => {
             ? questions.length
             : body.numberOfQuestions;
 
-    /**
-     * First calculate for type
-     */
-    const mcqCount = Math.round(
-        (body.mcqPercentage / totalQuestions) * totalQuestions
-    );
-    const fillCount = Math.round(
-        (body.fillCount / totalQuestions) * totalQuestions
-    );
-    const trueCount = Math.round(
-        (body.trueFalsePercentage / totalQuestions) * totalQuestions
-    );
+    const criteria = req.body.questionTypes;
+    const getQuestionsByCriteria = async (criteria) => {
+        const queries = criteria.map(async (criterion) => {
+            const { type, easy, medium, hard } = criterion;
 
-    const mcqQuestions = questions
-        .filter((q) => q.type === 'MCQ')
-        .slice(0, mcqCount);
-    const fillQuestions = questions
-        .filter((q) => q.type === 'FillTheBlank')
-        .slice(0, fillCount);
-    const trueQuestions = questions
-        .filter((q) => q.type === 'true-false')
-        .slice(0, trueCount);
+            const easyQuestions = await interactiveObjectSchema
+                .find({ type, complexity: 'easy' })
+                .limit(Number(easy));
+            const mediumQuestions = await interactiveObjectSchema
+                .find({ type, complexity: 'medium' })
+                .limit(Number(medium));
+            const hardQuestions = await interactiveObjectSchema
+                .find({ type, complexity: 'hard' })
+                .limit(Number(hard));
 
-    let selectedQuestions = [
-        ...mcqQuestions,
-        ...fillQuestions,
-        ...trueQuestions,
-    ];
+            return [...easyQuestions, ...mediumQuestions, ...hardQuestions];
+        });
 
-    /**
-     * second calculate for level
-     */
-    const easyCount = Math.round(
-        (body.easyPercentage / totalQuestions) * totalQuestions
-    );
-    const mediumCount = Math.round(
-        (body.mediumPercentage / totalQuestions) * totalQuestions
-    );
-    const hardCount = Math.round(
-        (body.hardPercentage / totalQuestions) * totalQuestions
-    );
+        const results = await Promise.all(queries);
+        return results.flat();
+    };
 
-    // Filter questions based on level
-    const easyQuestions = selectedQuestions
-        .filter((q) => q.complexity == 'easy')
-        .slice(0, easyCount);
-    const mediumQuestions = selectedQuestions
-        .filter((q) => q.complexity == 'medium')
-        .slice(0, mediumCount);
-    const hardQuestions = selectedQuestions
-        .filter((q) => q.complexity == 'hard')
-        .slice(0, hardCount);
-
-    selectedQuestions = [
-        ...easyQuestions,
-        ...mediumQuestions,
-        ...hardQuestions,
-    ];
+    const selectedQuestions = await getQuestionsByCriteria(criteria);
 
     /**
      * Last update quiz with new list
