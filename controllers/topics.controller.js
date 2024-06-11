@@ -149,8 +149,7 @@ router.post('/topics-criteria/:quizId', async (req, res) => {
             domainName,
             subDomainId,
             subDomainName,
-        });
-        // .save();
+        }).save();
 
         // Then we add the questions to current topic
         const selectedQuestionsIds = req.body.selectedQuestions.split(',');
@@ -197,19 +196,29 @@ router.post('/topics-criteria/:quizId', async (req, res) => {
         const queries = criteria.map(async (criterion) => {
             const { type, easy, medium, hard } = criterion;
 
+            // Get the total count of questions for the current type
+            const totalQuestions = await interactiveObjectSchema.countDocuments(
+                { type }
+            );
+
+            // Calculate the number of questions based on percentages
+            const easyCount = Math.floor((easy / 100) * totalQuestions);
+            const mediumCount = Math.floor((medium / 100) * totalQuestions);
+            const hardCount = Math.floor((hard / 100) * totalQuestions);
+
+            // Fetch questions based on calculated counts
             const easyQuestions = await interactiveObjectSchema
                 .find({ type, complexity: 'easy' })
-                .limit(Number(easy));
+                .limit(easyCount);
             const mediumQuestions = await interactiveObjectSchema
                 .find({ type, complexity: 'medium' })
-                .limit(Number(medium));
+                .limit(mediumCount);
             const hardQuestions = await interactiveObjectSchema
                 .find({ type, complexity: 'hard' })
-                .limit(Number(hard));
+                .limit(hardCount);
 
             return [...easyQuestions, ...mediumQuestions, ...hardQuestions];
         });
-
         const results = await Promise.all(queries);
         return results.flat();
     };
