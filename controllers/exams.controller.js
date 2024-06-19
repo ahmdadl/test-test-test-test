@@ -20,6 +20,8 @@ const dataArray = [];
 router.get('/exams', async (req, res) => {
     const query = req.query;
 
+    const quizId = query.quiz;
+
     const page = query.page || 1;
     const limit = query.limit || 14;
     const paginate = query.paginate || '';
@@ -27,6 +29,11 @@ router.get('/exams', async (req, res) => {
     delete query.page;
     delete query.limit;
     delete query.paginate;
+    delete query.quiz;
+
+    if (quizId) {
+        query.quizId = quizId;
+    }
 
     const exams = await ExamSchema.paginate(query, {
         page,
