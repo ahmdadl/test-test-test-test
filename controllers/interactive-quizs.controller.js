@@ -257,7 +257,7 @@ const dataArray = [];
 
 router.get('/interactive-quizs', async (req, res) => {
     const page = req.query.page || 1;
-    const limit = req.query.limit || 14;
+    const limit = req.query.limit || 250;
 
     delete req.query.page;
     delete req.query.limit;

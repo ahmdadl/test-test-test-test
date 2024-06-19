@@ -58,6 +58,12 @@ var interactiveQuizSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        criterias: [
+            {
+                type: mongoose.Types.ObjectId,
+                ref: 'CriteriaSchema',
+            },
+        ],
         createdAt: { type: Date, default: Date.now },
         updatedAt: { type: Date, default: Date.now },
     },

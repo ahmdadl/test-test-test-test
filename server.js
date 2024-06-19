@@ -3,6 +3,7 @@ const express = require('express');
 const interactiveObjectsController = require('./controllers/interactive-objects.controller');
 const interactivequizsController = require('./controllers/interactive-quizs.controller');
 const TopicsController = require('./controllers/topics.controller');
+const CriteriaController = require('./controllers/criteria.controller');
 const StudentsController = require('./controllers/students.controller');
 const ExamsController = require('./controllers/exams.controller');
 const MCQController = require('./controllers/MCQ.controller');
@@ -62,4 +63,5 @@ app.use('/api', [
     TopicsController,
     StudentsController,
     ExamsController,
+    CriteriaController,
 ]);
