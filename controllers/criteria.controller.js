@@ -46,8 +46,18 @@ router.post('/criteria/use-in-quiz/:quizId', async (req, res) => {
             );
             interactiveObjectSchema
                 .find({ _id: { $in: objectIds } })
-                .then((docs) => {
-                    questions = docs;
+                .then(async (docs) => {
+                    for (const q of docs) {
+                        const question = await interactiveObjectSchema.findById(
+                            q._id
+                        );
+
+                        if (!question) continue;
+
+                        question.topicId = topic._id;
+                        question.topicTitle = topic.title;
+                        await question.save();
+                    }
                 });
         }
 
