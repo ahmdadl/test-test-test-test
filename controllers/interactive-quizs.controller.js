@@ -352,7 +352,7 @@ const getQuestionsByCriteria = async (criteria) => {
     if (!criteria || !Array.isArray(criteria)) return [];
 
     const queries = criteria?.map(async (criterion) => {
-        const { type, easy, medium, hard } = criterion;
+        const { type, easy, medium, hard, topicId } = criterion;
 
         // Get the total count of questions for the current type
         const totalQuestions = await interactiveObjectSchema.countDocuments({
